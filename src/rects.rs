@@ -84,10 +84,10 @@ impl Rects {
 
     pub fn select_rect(&mut self, clicked_point: Point) {
         let selected_entry = self.rects.iter().enumerate().find(|(_, rect)| {
-            return clicked_point.x <= (*rect).p2.x
-                && clicked_point.x >= (*rect).p1.x
-                && clicked_point.y <= (*rect).p2.y
-                && clicked_point.y >= (*rect).p1.y
+            return clicked_point.x <= rect.p2.x
+                && clicked_point.x >= rect.p1.x
+                && clicked_point.y <= rect.p2.y
+                && clicked_point.y >= rect.p1.y
         });
         self.selected = match selected_entry {
             Some((idx, _)) => Some(idx),
@@ -113,5 +113,11 @@ impl Rects {
         canvas
             .draw_rects(sdl_rects.as_slice())
             .expect("Couldn't draw rects");
+
+        if let Some(selected_idx) = self.selected {
+            canvas.set_draw_color(Color::RGB(255, 0, 0));
+            canvas.fill_rect(self.rects[selected_idx].to_SDL_rect())
+            .expect("Couldn't draw selected rect")
+        }
     }
 }

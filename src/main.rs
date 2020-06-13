@@ -15,7 +15,7 @@ pub fn main() {
     let video_subsystem = sdl_context.video().unwrap();
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context
-        .load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+        .load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 50)
         .expect("Couldn't import the font");
 
     let window = video_subsystem
@@ -34,10 +34,10 @@ pub fn main() {
 
     let rect = SDL_Rect::new(0, 0, 60, 30);
 
-    let mut time1: std::time::Instant;
-    let mut time2: std::time::Instant;
-    let mut time_diff_sum: std::time::Duration = std::time::Duration::new(0, 0);
-    let mut time_diff_count: u128 = 0;
+    // let mut time1: std::time::Instant;
+    // let mut time2: std::time::Instant;
+    // let mut time_diff_sum: std::time::Duration = std::time::Duration::new(0, 0);
+    // let mut time_diff_count: u128 = 0;
 
     let mut rects = rects::Rects::new();
 
@@ -46,7 +46,7 @@ pub fn main() {
 
 
     'running: loop {
-        time1 = std::time::Instant::now();
+        // time1 = std::time::Instant::now();
 
         for event in event_pump.poll_iter() {
             match event {
@@ -87,10 +87,10 @@ pub fn main() {
         canvas.present();
         // The rest of the game loop goes here...
 
-        time2 = std::time::Instant::now();
+        // time2 = std::time::Instant::now();
 
-        time_diff_sum = time_diff_sum + (time2 - time1);
-        time_diff_count = time_diff_count + 1;
+        // time_diff_sum = time_diff_sum + (time2 - time1);
+        // time_diff_count = time_diff_count + 1;
 
         // if time_diff_count == 50 {
         //     println!("Average render: {}", time_diff_sum.as_micros() / time_diff_count);
@@ -98,6 +98,6 @@ pub fn main() {
         //     time_diff_count = 0;
         // }
 
-        ::std::thread::sleep(Duration::from_millis(1000 / 60) - (time2 - time1));
+        ::std::thread::sleep(Duration::from_millis(1000 / 60) - Duration::from_micros(1000));
     }
 }
