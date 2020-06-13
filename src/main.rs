@@ -8,10 +8,10 @@ use sdl2::render::{Canvas};
 use sdl2::video::Window;
 
 const WINDOW_WIDTH: i32 = 800;
-const WINDOW_HEIGHT: i32 = 600;
+const WINDOW_HEIGHT: i32 = 800;
 
 const HOR_SQUARES: i32 = 80;
-const VER_SQUARES: i32 = 60;
+const VER_SQUARES: i32 = 80;
 
 const SQUARE_WIDTH: i32 = WINDOW_WIDTH / HOR_SQUARES;
 const SQUARE_HEIGHT: i32 = WINDOW_HEIGHT / VER_SQUARES;
