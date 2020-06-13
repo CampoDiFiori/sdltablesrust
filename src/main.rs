@@ -8,14 +8,14 @@ use sdl2::ttf::Font;
 use sdl2::video::Window;
 use std::time::Duration;
 
-const WINDOW_WIDTH: i32 = 800;
-const WINDOW_HEIGHT: i32 = 600;
+const WINDOW_WIDTH: i32 = 1000;
+const WINDOW_HEIGHT: i32 = 1000;
 
-const HOR_SQUARES: i32 = 80;
-const VER_SQUARES: i32 = 60;
+const GRID_WIDTH: i32 = 100;
+const GRID_HEIGHT: i32 = 100;
 
-const SQUARE_WIDTH: i32 = WINDOW_WIDTH / HOR_SQUARES;
-const SQUARE_HEIGHT: i32 = WINDOW_HEIGHT / VER_SQUARES;
+const SQUARE_WIDTH: i32 = WINDOW_WIDTH / GRID_WIDTH;
+const SQUARE_HEIGHT: i32 = WINDOW_HEIGHT / GRID_HEIGHT;
 
 #[derive(Copy, Clone)]
 enum CellState {
@@ -24,22 +24,12 @@ enum CellState {
 }
 
 struct GameState {
-    grid: [[CellState; VER_SQUARES as usize]; HOR_SQUARES as usize],
-    neighbors: [[u8; VER_SQUARES as usize]; HOR_SQUARES as usize],
+    grid: [[CellState; GRID_WIDTH as usize]; GRID_HEIGHT as usize],
+    neighbors: [[u8; GRID_WIDTH as usize]; GRID_HEIGHT as usize],
 }
 
 impl GameState {
     pub fn draw(&self, canvas: &mut Canvas<Window>, font: &Font) {
-        let text_surface = font
-            .render("1")
-            .blended(Color::RGBA(255, 0, 0, 255))
-            .expect("Font to surface failed");
-
-        let texture_creator = canvas.texture_creator();
-        let text_texture = texture_creator
-            .create_texture_from_surface(&text_surface)
-            .expect("Surface to texture failed");
-
         // let TextureQuery { width, height, .. } = text_texture.query();
 
         // set entire background to black
@@ -49,6 +39,16 @@ impl GameState {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         for (i, row) in self.grid.iter().enumerate() {
             for (j, cell) in row.iter().enumerate() {
+                let text_surface = font
+                    .render(self.neighbors[i][j].to_string().as_str())
+                    .blended(Color::RGBA(255, 0, 0, 255))
+                    .expect("Font to surface failed");
+
+                let texture_creator = canvas.texture_creator();
+                let text_texture = texture_creator
+                    .create_texture_from_surface(&text_surface)
+                    .expect("Surface to texture failed");
+
                 match *cell {
                     CellState::Alive => {
                         let rect = Rect::new(
@@ -88,8 +88,8 @@ impl GameState {
                     _ => {
                         if row + i < 0
                             || col + j < 0
-                            || row + i == VER_SQUARES
-                            || col + j == HOR_SQUARES
+                            || row + i == GRID_HEIGHT
+                            || col + j == GRID_WIDTH
                         {
                             continue;
                         }
@@ -107,8 +107,8 @@ impl GameState {
             }
         }
 
-        for row in 0..HOR_SQUARES {
-            for col in 0..VER_SQUARES {
+        for row in 0..GRID_WIDTH {
+            for col in 0..GRID_HEIGHT {
                 match self.grid[row as usize][col as usize] {
                     CellState::Alive => self.update_cell_neighbors(row, col),
                     _ => (),
@@ -118,8 +118,8 @@ impl GameState {
     }
 
     pub fn update_grid(&mut self) {
-        for row in 0..(HOR_SQUARES as usize) {
-            for col in 0..(VER_SQUARES as usize) {
+        for row in 0..(GRID_WIDTH as usize) {
+            for col in 0..(GRID_HEIGHT as usize) {
                 self.grid[row][col] = match (self.grid[row][col], self.neighbors[row][col]) {
                     (CellState::Alive, 0) | (CellState::Alive, 1) => CellState::Dead,
                     (CellState::Dead, 0) | (CellState::Dead, 1) | (CellState::Dead, 2) => {
@@ -134,7 +134,7 @@ impl GameState {
 }
 
 fn init_game_state() -> GameState {
-    let mut grid = [[CellState::Dead; VER_SQUARES as usize]; HOR_SQUARES as usize];
+    let mut grid = [[CellState::Dead; GRID_WIDTH as usize]; GRID_HEIGHT as usize];
 
     for row in grid.iter_mut() {
         for cell in row.iter_mut() {
@@ -148,7 +148,7 @@ fn init_game_state() -> GameState {
 
     return GameState {
         grid,
-        neighbors: [[0_u8; VER_SQUARES as usize]; HOR_SQUARES as usize],
+        neighbors: [[0_u8; GRID_WIDTH as usize]; GRID_HEIGHT as usize],
     };
 }
 
@@ -171,10 +171,15 @@ pub fn main() {
     let mut game_state = init_game_state();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
+
+    let mut is_running = true;
+
     'running: loop {
-        game_state.update_neighbors();
-        game_state.update_grid();
-        game_state.draw(&mut canvas, &font);
+        if is_running {
+            game_state.update_neighbors();
+            // game_state.update_grid();
+            game_state.draw(&mut canvas, &font);
+        }
 
         for event in event_pump.poll_iter() {
             match event {
@@ -183,11 +188,15 @@ pub fn main() {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => is_running = !is_running,
                 _ => {}
             }
         }
         // The rest of the game loop goes here...
 
-        ::std::thread::sleep(Duration::from_millis(2000));
+        ::std::thread::sleep(Duration::from_millis(200));
     }
 }
