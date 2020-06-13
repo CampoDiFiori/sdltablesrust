@@ -24,7 +24,7 @@ impl Point {
         return font
             .render(format!("{}, {}", self.x, self.y).as_str())
             .blended(Color::RGBA(0, 0, 0, 255))
-            .expect("Font to surface failed");
+            .unwrap();
     }
 
     pub fn update_and_get_diff(&mut self, x: i32, y: i32) -> (i32, i32) {
@@ -55,7 +55,7 @@ impl Rect {
         self.p2.y += y_diff;
     }
 
-    pub fn to_SDL_rect(&self) -> sdl2::rect::Rect {
+    pub fn to_sdl_rect(&self) -> sdl2::rect::Rect {
         sdl2::rect::Rect::new(
             self.p1.x,
             self.p1.y,
@@ -105,19 +105,19 @@ impl Rects {
         }
     }
 
-    pub fn put_on_window_canvas(&self, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>) {
+    pub fn put_on_window_canvas(&self, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>) -> Result<(), String> {
         let sdl_rects: Vec<sdl2::rect::Rect> =
-            self.rects.iter().map(|rect| rect.to_SDL_rect()).collect();
+            self.rects.iter().map(|rect| rect.to_sdl_rect()).collect();
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas
-            .draw_rects(sdl_rects.as_slice())
-            .expect("Couldn't draw rects");
+            .draw_rects(sdl_rects.as_slice())?;
 
         if let Some(selected_idx) = self.selected {
             canvas.set_draw_color(Color::RGB(255, 0, 0));
-            canvas.fill_rect(self.rects[selected_idx].to_SDL_rect())
-            .expect("Couldn't draw selected rect")
+            canvas.fill_rect(self.rects[selected_idx].to_sdl_rect())?;
         }
+
+        Ok(())
     }
 }

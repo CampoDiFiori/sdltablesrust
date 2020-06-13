@@ -10,13 +10,14 @@ use std::time::Duration;
 mod rects;
 use rects::{Point, Rect, WINDOW_HEIGHT, WINDOW_WIDTH};
 
-pub fn main() {
+pub fn main() -> Result<(), String> {
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context
         .load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 50)
-        .expect("Couldn't import the font");
+        .unwrap();
 
     let window = video_subsystem
         .window("Tables", WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -75,14 +76,14 @@ pub fn main() {
         let texture_creator = canvas.texture_creator();
         let text_texture = texture_creator
             .create_texture_from_surface(&mouse_position.to_surface(&font))
-            .expect("Surface to texture failed");
+            .unwrap();
 
         // canvas.fill_rect(rect).unwrap();
         canvas
             .copy(&text_texture, None, Some(rect))
-            .expect("Texture copy failed");
+            .unwrap();
 
-        rects.put_on_window_canvas(&mut canvas);
+        rects.put_on_window_canvas(&mut canvas)?;
 
         canvas.present();
         // The rest of the game loop goes here...
@@ -100,4 +101,6 @@ pub fn main() {
 
         ::std::thread::sleep(Duration::from_millis(1000 / 60) - Duration::from_micros(1000));
     }
+
+    return Ok(());
 }
