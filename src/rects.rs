@@ -2,8 +2,8 @@ use sdl2::pixels::Color;
 use sdl2::surface::Surface;
 use sdl2::ttf::Font;
 
-pub const WINDOW_WIDTH: u32 = 1000;
-pub const WINDOW_HEIGHT: u32 = 1000;
+pub const WINDOW_WIDTH: u32 = 700;
+pub const WINDOW_HEIGHT: u32 = 700;
 
 #[derive(Copy, Clone)]
 pub struct Point {
