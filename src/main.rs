@@ -8,7 +8,14 @@ use sdl2::rect::Rect as SDL_Rect;
 use std::time::Duration;
 
 mod rects;
-use rects::{Point, Rect, WINDOW_HEIGHT, WINDOW_WIDTH};
+mod config;
+mod point;
+mod clickable;
+mod rect;
+
+use config::{WINDOW_HEIGHT, WINDOW_WIDTH};
+use point::Point;
+use rect::Rect;
 
 pub fn main() -> Result<(), String> {
 
