@@ -49,8 +49,8 @@ pub fn main() -> Result<(), String> {
 
     let mut rects = rects::Rects::new();
 
-    rects.add_rect(Rect::new(500, 500, 600, 600 ));
-    rects.add_rect(Rect::new(300, 300, 400, 400 ));
+    rects.add_table(Rect::new(500, 500, 600, 600 ));
+    rects.add_table(Rect::new(300, 300, 400, 400 ));
 
 
     'running: loop {
@@ -69,10 +69,10 @@ pub fn main() -> Result<(), String> {
                 } => is_running = !is_running,
                 Event::MouseMotion { x, y, .. } => {
                     let (x_diff, y_diff) = mouse_position.update_and_get_diff(x, y);
-                    rects.move_selected(x_diff, y_diff)
+                    rects.move_selected_rect(x_diff, y_diff)
                 }
                 Event::MouseButtonDown { x, y, .. } => rects.select_rect(Point::from_xy(x, y)),
-                Event::MouseButtonUp { .. } => rects.unselect_rect(),
+                Event::MouseButtonUp { .. } => rects.unselect_any_rect(),
                 _ => {}
             }
         }

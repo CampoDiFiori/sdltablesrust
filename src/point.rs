@@ -1,6 +1,7 @@
 use sdl2::surface::Surface;
 use sdl2::ttf::Font;
 use sdl2::pixels::Color;
+use super::rect::Rect;
 
 #[derive(Copy, Clone)]
 pub struct Point {
@@ -17,6 +18,11 @@ impl Point {
         Point { x, y }
     }
 
+    pub fn move_by(&mut self, x_diff: i32, y_diff: i32) -> () {
+        self.x += x_diff;
+        self.y += y_diff;
+    }
+
     pub fn to_surface(&self, font: &Font) -> Surface {
         return font
             .render(format!("{}, {}", self.x, self.y).as_str())
@@ -29,5 +35,9 @@ impl Point {
         self.x = x;
         self.y = y;
         ret
+    }
+
+    pub fn to_rect (&self) -> Rect {
+        Rect::new(self.x - 5, self.y - 5, self.x + 5, self.y + 5)
     }
 }

@@ -29,6 +29,24 @@ impl Rect {
             (self.p2.y - self.p1.y) as u32,
         )
     }
+
+    /// Although we only need two points to generate a Rect, sometimes
+    /// we're interested in all four. Mainly, when we want to create 4 control points
+    /// for a Rect.
+    pub fn get_all_points(& self) -> [Point; 4] {
+        [
+            self.p1,
+            Point {
+                x: self.p2.x,
+                y: self.p1.y
+            },
+            self.p2,
+            Point {
+                x: self.p1.x,
+                y: self.p2.y
+            },
+        ]
+    }
 }
 
 impl Clickable for Rect {
