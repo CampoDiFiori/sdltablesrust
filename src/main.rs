@@ -16,7 +16,7 @@ pub fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video().unwrap();
     let ttf_context = sdl2::ttf::init().unwrap();
     let font = ttf_context
-        .load_font("Times New Roman/times new roman.ttf", 50)
+        .load_font("fonts/times-new-roman.ttf", 50)
         .unwrap();
 
     let window = video_subsystem
