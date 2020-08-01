@@ -7,15 +7,13 @@ use sdl2::rect::Rect as SDL_Rect;
 // use sdl2::video::Window;
 use std::time::Duration;
 
-mod rects;
 mod config;
-mod point;
-mod clickable;
-mod rect;
+mod shapes;
 
 use config::{WINDOW_HEIGHT, WINDOW_WIDTH};
-use point::Point;
-use rect::Rect;
+use shapes::point::Point;
+use shapes::rects::Rects;
+use shapes::rect::Rect;
 
 pub fn main() -> Result<(), String> {
 
@@ -47,7 +45,7 @@ pub fn main() -> Result<(), String> {
     // let mut time_diff_sum: std::time::Duration = std::time::Duration::new(0, 0);
     // let mut time_diff_count: u128 = 0;
 
-    let mut rects = rects::Rects::new();
+    let mut rects = Rects::new();
 
     rects.add_table(Rect::new(500, 500, 600, 600 ));
     rects.add_table(Rect::new(300, 300, 400, 400 ));
