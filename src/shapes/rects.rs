@@ -1,122 +1,143 @@
 use sdl2::pixels::Color;
-use super::point::Point;
-use super::rect::Rect;
+use sdl2::rect::Point;
 use super::clickable::Clickable;
+use super::into_sdl_rect::IntoSdlRect;
 
 pub struct Rects {
-    tables: Vec<Rect>,
-    control_points: Vec<Rect>,
-    selected_table: Option<usize>,
-    selected_control_point: Option<usize>
+    tables_ctrlpts: Vec<Point>,
+    selected_table_idx: Option<usize>,
+    selected_table_ctrlpt: Option<usize>
+}
+
+impl Clickable for sdl2::rect::Point {
+    fn is_hovered (&self, clicked_point: &sdl2::rect::Point) -> bool {
+        return clicked_point.x <= self.x + 5
+        && clicked_point.x >= self.x - 5
+        && clicked_point.y <= self.y + 5
+        && clicked_point.y >= self.y - 5 
+    } 
+
+    fn move_by(&mut self, x_diff: i32, y_diff: i32) -> () {
+        *self = self.offset(x_diff, y_diff)
+    }
+}
+
+impl IntoSdlRect for sdl2::rect::Point {
+    fn into_sdl_rect(&self) -> sdl2::rect::Rect {
+        sdl2::rect::Rect::new(
+            self.x - 5,
+            self.y - 5,
+            10,
+            10
+        )  
+    }
+}
+
+impl IntoSdlRect for [sdl2::rect::Point] {
+    fn into_sdl_rect(&self) -> sdl2::rect::Rect {
+        sdl2::rect::Rect::new(
+            self[0].x,
+            self[0].y,
+            (self[1].x - self[0].x) as u32,
+            (self[2].y - self[1].y) as u32
+        )    
+    }
+}
+
+impl Clickable for sdl2::rect::Rect {
+    fn is_hovered (&self, clicked_point: &sdl2::rect::Point) -> bool {
+        return clicked_point.x <= self.right()
+        && clicked_point.x >= self.left()
+        && clicked_point.y <= self.bottom() // bottom for some reason is the top of rect
+        && clicked_point.y >= self.top() 
+    } 
+
+    fn move_by(&mut self, x_diff: i32, y_diff: i32) -> () {
+        self.offset(x_diff, y_diff)
+    }
 }
 
 impl Rects {
     pub fn new() -> Rects {
         Rects {
-            tables: Vec::new(),
-            control_points: Vec::new(),
-            selected_table: None,
-            selected_control_point: None
+            tables_ctrlpts: Vec::new(),
+            selected_table_idx: None,
+            selected_table_ctrlpt: None
         }
     }
 
-    pub fn add_table(&mut self, rect: Rect) {
+    pub fn add_table(&mut self, sdl_rect: sdl2::rect::Rect) {
         // adding the rect's control points
-        let mut control_points: Vec<Rect> = rect.get_all_points()
-        .iter()
-        .map(|point| point.to_rect())
-        .collect();
+        let mut control_points: Vec<Point> = vec![sdl_rect.top_left(), sdl_rect.top_right(), sdl_rect.bottom_right(), sdl_rect.bottom_left()];
 
-        self.control_points.append(&mut control_points);
-
-        // adding a table
-        self.tables.push(rect);
+        self.tables_ctrlpts.append(&mut control_points);
     }
 
-    pub fn select_rect(&mut self, clicked_point: Point) {
-        let selected_ctrl_pt = self.control_points.iter()
+    pub fn select_rect(&mut self, clicked_point: sdl2::rect::Point) {
+        self.selected_table_ctrlpt = self.tables_ctrlpts
+        .iter()
         .enumerate()
-        .find(|(_, rect)| rect.is_hovered(&clicked_point));
+        .find(|(_, point)| point.is_hovered(&clicked_point))
+        .map(|(idx, _)| idx);
 
-        self.selected_control_point = match selected_ctrl_pt {
-            Some((idx, _)) => Some(idx),
-            None => None,
-        };
-
-        if let Some(_) = self.selected_control_point  {
+        if let Some(_) = self.selected_table_ctrlpt  {
             return;
         }
 
-        let selected_table = self.tables.iter()
+        // when we select table as a whole, the `id` corresponds to an id of a chunk of 4
+        self.selected_table_idx = self.tables_ctrlpts
+        .chunks(4)
         .enumerate()
-        .find(|(_, rect)| rect.is_hovered(&clicked_point));
-
-        self.selected_table = match selected_table {
-            Some((idx, _)) => Some(idx),
-            None => None,
-        };
-
+        .find(|(_, table_ctrlpts)| table_ctrlpts.into_sdl_rect().is_hovered(&clicked_point))
+        .map(|(idx, _)| idx);
     }
 
     pub fn unselect_any_rect(&mut self) {
-        self.selected_table = None;
-        self.selected_control_point = None;
+        self.selected_table_idx = None;
+        self.selected_table_ctrlpt = None;
     }
 
     pub fn move_selected_rect(&mut self, x_diff: i32, y_diff: i32) {
-        if let Some(selected_table_idx) = self.selected_table {
-            // moving the table 
-            self.tables[selected_table_idx].move_by(x_diff, y_diff);
-            
-            // moving table's control points
-            (selected_table_idx * 4..=selected_table_idx*4+3)
-            .into_iter()
-            .for_each(|selected_ctrlpt_idx| {
-                self.control_points[selected_ctrlpt_idx].move_by(x_diff, y_diff)
+        if let Some(selected_table_idx) = self.selected_table_idx {            
+            // moving entire table's control points
+            self.tables_ctrlpts[selected_table_idx * 4..=selected_table_idx*4+3]
+            .iter_mut()
+            .for_each(|selected_ctrlpt| {
+                selected_ctrlpt.move_by(x_diff, y_diff)
             });
 
             return;
         }
 
-        if let Some(selected_ctrl_pt_idx) = self.selected_control_point {
-            let manipulated_table_idx = selected_ctrl_pt_idx / 4;
-            let manipulated_ctrl_pt_num = selected_ctrl_pt_idx % 4;
+        // user grabbed one contol point, but we need to change 4
+        if let Some(selected_ctrlpt_idx) = self.selected_table_ctrlpt {
+            let first_ctrlpt_in_slice_idx = selected_ctrlpt_idx / 4;
+            let manipulated_ctrlpt_num = selected_ctrlpt_idx % 4;
             
-            let mut all_ctrl_pts = self.tables[manipulated_table_idx].get_all_points();
+            let selected_table_ctrlpts_slice = &mut self.tables_ctrlpts[first_ctrlpt_in_slice_idx* 4..=first_ctrlpt_in_slice_idx*4+3];
 
             // moving three control points, here the one updated explicitly
-            all_ctrl_pts[manipulated_ctrl_pt_num].move_by(x_diff, y_diff);
+            selected_table_ctrlpts_slice[manipulated_ctrlpt_num].move_by(x_diff, y_diff);
 
             // moving the two control points updated implicitly
-            match manipulated_ctrl_pt_num {
+            match manipulated_ctrlpt_num {
                 0 => {
-                    all_ctrl_pts[1].move_by(0, y_diff);
-                    all_ctrl_pts[3].move_by(x_diff, 0);
+                    selected_table_ctrlpts_slice[1].move_by(0, y_diff);
+                    selected_table_ctrlpts_slice[3].move_by(x_diff, 0);
                 },
                 1 => {
-                    all_ctrl_pts[0].move_by(0, y_diff);
-                    all_ctrl_pts[2].move_by(x_diff, 0);
+                    selected_table_ctrlpts_slice[0].move_by(0, y_diff);
+                    selected_table_ctrlpts_slice[2].move_by(x_diff, 0);
                 },
                 2 => {
-                    all_ctrl_pts[1].move_by(x_diff, 0);
-                    all_ctrl_pts[3].move_by(0, y_diff);
+                    selected_table_ctrlpts_slice[1].move_by(x_diff, 0);
+                    selected_table_ctrlpts_slice[3].move_by(0, y_diff);
                 },
                 3 => {
-                    all_ctrl_pts[2].move_by(0, y_diff);
-                    all_ctrl_pts[0].move_by(x_diff, 0);
+                    selected_table_ctrlpts_slice[2].move_by(0, y_diff);
+                    selected_table_ctrlpts_slice[0].move_by(x_diff, 0);
                 }
                 _ => {}
-            }
-
-            self.tables[manipulated_table_idx] = Rect::new(
-                all_ctrl_pts[0].x,
-                all_ctrl_pts[0].y,
-                all_ctrl_pts[2].x,
-                all_ctrl_pts[2].y
-            );
-
-            for i in 0..=3 {
-                self.control_points[manipulated_table_idx * 4 + i] = all_ctrl_pts[i].to_rect();
             }
         }
 
@@ -124,29 +145,37 @@ impl Rects {
 
     pub fn put_on_window_canvas(&self, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>) -> Result<(), String> {
         // rendering all rects
-        let sdl_tables: Vec<sdl2::rect::Rect> =
-            self.tables.iter().map(|rect| rect.to_sdl_rect()).collect();
+        let sdl_tables: Vec<sdl2::rect::Rect> = 
+            self.tables_ctrlpts
+            .chunks(4)
+            .map(|table_ctrlpts| 
+                table_ctrlpts.into_sdl_rect()
+            ).collect();
 
-        let sdl_control_points: Vec<sdl2::rect::Rect> = 
-            self.control_points.iter().map(|rect| rect.to_sdl_rect()).collect();
+        let sdl_ctrlpts: Vec<sdl2::rect::Rect> = 
+            self.tables_ctrlpts
+            .iter()
+            .map(|point| 
+                point.into_sdl_rect()
+            ).collect();
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas
             .draw_rects(sdl_tables.as_slice())?;
 
         canvas
-            .draw_rects(sdl_control_points.as_slice())?;
+            .draw_rects(sdl_ctrlpts.as_slice())?;
             
         // rendering selected rect
         canvas.set_draw_color(Color::RGB(255, 0, 0));
 
-        if let Some(selected_idx) = self.selected_table {
-            canvas.fill_rect(self.tables[selected_idx].to_sdl_rect())?;
+        if let Some(selected_idx) = self.selected_table_idx {
+            canvas.fill_rect(self.tables_ctrlpts[selected_idx*4..=selected_idx*4+3].into_sdl_rect())?;
             return Ok(())
         }
 
-        if let Some(selected_idx) = self.selected_control_point {
-            canvas.fill_rect(self.control_points[selected_idx].to_sdl_rect())?;
+        if let Some(selected_idx) = self.selected_table_ctrlpt {
+            canvas.fill_rect(self.tables_ctrlpts[selected_idx].into_sdl_rect())?;
         }
 
         Ok(())

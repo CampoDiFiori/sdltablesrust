@@ -11,9 +11,7 @@ mod config;
 mod shapes;
 
 use config::{WINDOW_HEIGHT, WINDOW_WIDTH};
-use shapes::point::Point;
 use shapes::rects::Rects;
-use shapes::rect::Rect;
 
 pub fn main() -> Result<(), String> {
 
@@ -32,7 +30,7 @@ pub fn main() -> Result<(), String> {
 
     let mut canvas = window.into_canvas().build().unwrap();
 
-    let mut mouse_position = Point::new();
+    let mut mouse_position = sdl2::rect::Point::new(0, 0);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -47,8 +45,8 @@ pub fn main() -> Result<(), String> {
 
     let mut rects = Rects::new();
 
-    rects.add_table(Rect::new(500, 500, 600, 600 ));
-    rects.add_table(Rect::new(300, 300, 400, 400 ));
+    rects.add_table(sdl2::rect::Rect::new(500, 500, 100, 100 ));
+    rects.add_table(sdl2::rect::Rect::new(300, 300, 100, 100 ));
 
 
     'running: loop {
@@ -66,10 +64,11 @@ pub fn main() -> Result<(), String> {
                     ..
                 } => is_running = !is_running,
                 Event::MouseMotion { x, y, .. } => {
-                    let (x_diff, y_diff) = mouse_position.update_and_get_diff(x, y);
+                    let (x_diff, y_diff) = (x - mouse_position.x, y - mouse_position.y);
+                    mouse_position = sdl2::rect::Point::new(x, y);
                     rects.move_selected_rect(x_diff, y_diff)
                 }
-                Event::MouseButtonDown { x, y, .. } => rects.select_rect(Point::from_xy(x, y)),
+                Event::MouseButtonDown { x, y, .. } => rects.select_rect(sdl2::rect::Point::new(x, y)),
                 Event::MouseButtonUp { .. } => rects.unselect_any_rect(),
                 _ => {}
             }
@@ -80,7 +79,10 @@ pub fn main() -> Result<(), String> {
 
         let texture_creator = canvas.texture_creator();
         let text_texture = texture_creator
-            .create_texture_from_surface(&mouse_position.to_surface(&font))
+            .create_texture_from_surface(font
+                .render(format!("{}, {}", mouse_position.x, mouse_position.y).as_str())
+                .blended(Color::RGBA(0, 0, 0, 255))
+                .unwrap())
             .unwrap();
 
         // canvas.fill_rect(rect).unwrap();
