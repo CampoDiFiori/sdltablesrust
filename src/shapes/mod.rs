@@ -1,4 +1,4 @@
 pub mod rects;
-pub mod point;
-pub mod rect;
 pub mod clickable;
+pub mod into_sdl_rect;
+pub mod impls;
